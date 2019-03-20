@@ -1,40 +1,31 @@
 <?php
 # NOTE(dan): This code partly written by php hater so bugs expected.
+
 error_reporting(0);
+
 require 'functions.php';
 require 'var.php';
 echo $cln;
-system("clear");
-redhawk_banner();
-if (extension_loaded('curl') || extension_loaded('dom'))
-  {
-  }
-else
-  {
-    if (!extension_loaded('curl'))
-      {
+
+if (extension_loaded('curl') || extension_loaded('dom')) {
+
+} else {
+    if (!extension_loaded('curl')) {
         echo $bold . $red . "\n[!] cURL Module Is Missing! Try 'fix' command OR Install php-curl" . $cln;
-      }
-    if (!extension_loaded('dom'))
-      {
+    }
+    if (!extension_loaded('dom')) {
         echo $bold . $red . "\n[!] DOM Module Is Missing! Try 'fix' command OR Install php-xml\n" . $cln;
-      }
-  }
-thephuckinstart:
+    }
+}
 echo "\n";
 
-# TODO(dan): Change some variables names.
+$in = @fopen($argv[1], "r");
+$out = @fopen($argv[2], "w");
 
-userinput("Enter text file to scan ");
-$file = trim(fgets(STDIN, 1024));
 
-$fp = @fopen($file, 'r');
-$output_fp = fopen("out.txt", "w");
-
-if ($fp) {
+if ($in) {
 	$line_num = 1;
-	while (($line= fgets($fp)) !== false) {
-		echo $blue . "----------------------------------------------------------------------------------------\n";
+	while (($line= fgets($in)) !== false) {
 		if (strpos($line, "http://") === 0) {
 			$ip = str_replace("http://", '', $line);
 			$ip = str_replace(PHP_EOL, '', $ip);
@@ -45,9 +36,9 @@ if ($fp) {
 			$ipsl = "https://";
 		} else {
 			# TODO(dan): When line is empty this block executes too, fix it
-			echo $red . "Wrong url or empty on line: $line_num\n";
-			fclose($fp); 
-			fclose($output_fp); 
+			echo $red . "Wrong url or empty on line: $line_num, url: $line\n";
+			fclose($in); 
+			fclose($out); 
 			exit();
 		}
 
@@ -69,28 +60,22 @@ if ($fp) {
 		$links = $dom->getElementsByTagName('a');
 		$vlnk  = 0;
 
-		foreach ($links as $link)
-		{
+		foreach ($links as $link) {
 			$found = false;
 			$lol = $link->getAttribute('href');
-			if (strpos($lol, '?') !== false)
-			{
+			if (strpos($lol, '?') !== false) {
 				echo $lblue . $bold . "\n[ LINK ] " . $fgreen . $lol . "\n" . $cln;
 				echo $blue . $bold . "[ SQLi ] ";
 				$sqllist = file_get_contents('sqlerrors.ini');
 				$sqlist  = explode(',', $sqllist);
-				if (strpos($lol, '://') !== false)
-				{
+				if (strpos($lol, '://') !== false) {
 					$sqlurl = $lol . "'";
-				}
-				else
-				{
+				} else {
 					$sqlurl = $ipsl . $ip . "/" . $lol . "'";
 				}
 				$sqlsc = file_get_contents($sqlurl);
 				$sqlvn = $bold . $red . "Not Vulnerable";
-				foreach ($sqlist as $sqli)
-				{
+				foreach ($sqlist as $sqli) {
 					if (strpos($sqlsc, $sqli) !== false) { 
 						$sqlvn = $green . $bold . "Vulnerable!";
 						$found = true;
@@ -98,7 +83,7 @@ if ($fp) {
 				}
 				echo $sqlvn;
 				if ($found == true) {
-					fwrite($output_fp, $reallink . $lol . "\n");
+					fwrite($out, $reallink . $lol . "\n");
 					break;
 				}
 				echo "\n$cln";
@@ -110,8 +95,8 @@ if ($fp) {
 		echo "\n" . $blue . $bold . "[+] URL(s) With Parameter(s): " . $green . $vlnk;
 		echo "\n\n";
 	}
-	fclose($fp);
-	fclose($output_fp);
+	fclose($in);
+	fclose($out);
 } else {
 	exit("File not found\n");
 
