@@ -26,6 +26,7 @@ $out = @fopen($argv[2], "w");
 if ($in) {
 	$line_num = 1;
 	while (($line= fgets($in)) !== false) {
+
 		if (strpos($line, "http://") === 0) {
 			$ip = str_replace("http://", '', $line);
 			$ip = str_replace(PHP_EOL, '', $ip);
@@ -35,16 +36,19 @@ if ($in) {
 			$ip = str_replace(PHP_EOL, '', $ip);
 			$ipsl = "https://";
 		} else {
-			# TODO(dan): When line is empty this block executes too, fix it
-			echo $red . "Wrong url or empty on line: $line_num, url: $line\n";
-			fclose($in); 
-			fclose($out); 
-			exit();
+			if (strpos($line, "www.") === 0) { 
+				$ip = str_replace(PHP_EOL, '', $line); 
+				$ipsl = "http://";
+			} else {
+				echo $red . "Wrong url or empty on line: $line_num, url: $line\n";
+				continue;
+			}
 		}
 
 		$line_num++;
 
 		echo "\n";
+
 
 		$reallink = $ipsl . $ip;
 		$srccd    = file_get_contents($reallink);
