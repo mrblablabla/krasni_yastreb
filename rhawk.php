@@ -21,11 +21,15 @@ echo "\n";
 
 $in = @fopen($argv[1], "r");
 $out = @fopen($argv[2], "w");
+$log = @fopen($argv[3], "w");
+
+$current_url_handled= 0;
+fwrite($log, "$current_url_handled\n");
 
 
 if ($in) {
 	$line_num = 1;
-	while (($line= fgets($in)) !== false) {
+	while (($line = fgets($in)) !== false) {
 
 		if (strpos($line, "http://") === 0) {
 			$ip = str_replace("http://", '', $line);
@@ -74,33 +78,39 @@ if ($in) {
 				$sqlist  = explode(',', $sqllist);
 				if (strpos($lol, '://') !== false) {
 					$sqlurl = $lol . "'";
-				} else {
-					$sqlurl = $ipsl . $ip . "/" . $lol . "'";
+			} else {
+				$sqlurl = $ipsl . $ip . "/" . $lol . "'";
+			}
+			$sqlsc = file_get_contents($sqlurl);
+			$sqlvn = $bold . $red . "Not Vulnerable";
+			foreach ($sqlist as $sqli) {
+				if (strpos($sqlsc, $sqli) !== false) { 
+					$sqlvn = $green . $bold . "Vulnerable!";
+					$found = true;
 				}
-				$sqlsc = file_get_contents($sqlurl);
-				$sqlvn = $bold . $red . "Not Vulnerable";
-				foreach ($sqlist as $sqli) {
-					if (strpos($sqlsc, $sqli) !== false) { 
-						$sqlvn = $green . $bold . "Vulnerable!";
-						$found = true;
-					}
-				}
-				echo $sqlvn;
-				if ($found == true) {
-					fwrite($out, $reallink . $lol . "\n");
-					break;
-				}
-				echo "\n$cln";
-				echo "\n";
-				$vlnk++;
+			}
+			echo $sqlvn;
+			if ($found == true) {
+				fwrite($out, $reallink . $lol . "\n");
+				break;
+			}
+			echo "\n$cln";
+			echo "\n";
+			$vlnk++;
 			}
 		}
+
+		++$current_url_handled;
+		@ftruncate($log, 0);
+		fwrite($log, "$current_url_handled\n");
 
 		echo "\n" . $blue . $bold . "[+] URL(s) With Parameter(s): " . $green . $vlnk;
 		echo "\n\n";
 	}
 	fclose($in);
 	fclose($out);
+	fclose($log);
+	echo $green . "Program exit here:)\n";
 } else {
 	exit("File not found\n");
 
